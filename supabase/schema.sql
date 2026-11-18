@@ -1,6 +1,6 @@
 -- BETNOVA: secure fixture catalogue foundation
 -- Run in the Supabase SQL Editor. This schema is for fictional/sample fixtures only.
--- It does not enable wagering, deposits, withdrawals, wallets, or cash payouts.
+-- It creates a non-cash practice wallet only; it does not enable real-money wagering, deposits, withdrawals, or cash payouts.
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -18,6 +18,15 @@ begin
   insert into public.profiles (id, role)
   values (new.id, 'member')
   on conflict (id) do nothing;
+
+  insert into public.practice_wallets (user_id, balance)
+  values (new.id, 1000.00)
+  on conflict (user_id) do nothing;
+
+  insert into public.practice_wallet_transactions
+    (user_id, transaction_type, amount, description)
+  values
+    (new.id, 'starter_credit', 1000.00, 'Welcome practice credits — no cash value');
   return new;
 end;
 $$;
@@ -42,8 +51,9 @@ as $$
   );
 $$;
 
-revoke all on function public.is_betnova_admin() from public;
+revoke all on function public.is_betnova_admin() from public, anon;
 grant execute on function public.is_betnova_admin() to authenticated;
+revoke all on function public.handle_new_betnova_user() from public, anon, authenticated;
 
 create table if not exists public.fixtures (
   id uuid primary key default gen_random_uuid(),
@@ -131,3 +141,52 @@ grant select on public.profiles to authenticated;
 -- where id = (select id from auth.users where email = 'YOUR-ADMIN-EMAIL');
 --
 -- Verify the row before continuing. Never make public sign-up assign admin roles.
+
+-- Per-account non-cash practice wallet. No client-side writes are permitted.
+create table if not exists public.practice_wallets (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  balance numeric(12,2) not null default 1000.00 check (balance >= 0),
+  currency_label text not null default 'PRACTICE CREDITS' check (currency_label = 'PRACTICE CREDITS'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.practice_wallet_transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  transaction_type text not null check (transaction_type in ('starter_credit','practice_stake','practice_return','adjustment')),
+  amount numeric(12,2) not null check (amount > 0),
+  description text not null check (char_length(description) between 1 and 180),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists practice_wallet_transactions_user_created_idx
+  on public.practice_wallet_transactions (user_id, created_at desc);
+
+alter table public.practice_wallets enable row level security;
+alter table public.practice_wallet_transactions enable row level security;
+
+drop policy if exists "Users can read own practice wallet" on public.practice_wallets;
+create policy "Users can read own practice wallet"
+  on public.practice_wallets for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+drop policy if exists "Users can read own practice wallet transactions" on public.practice_wallet_transactions;
+create policy "Users can read own practice wallet transactions"
+  on public.practice_wallet_transactions for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+grant select on public.practice_wallets, public.practice_wallet_transactions to authenticated;
+
+-- Existing accounts receive the same one-time starter practice credits.
+insert into public.practice_wallets (user_id, balance)
+select u.id, 1000.00 from auth.users u
+on conflict (user_id) do nothing;
+
+insert into public.practice_wallet_transactions (user_id, transaction_type, amount, description)
+select w.user_id, 'starter_credit', 1000.00, 'Welcome practice credits — no cash value'
+from public.practice_wallets w
+where not exists (
+  select 1 from public.practice_wallet_transactions t
+  where t.user_id = w.user_id and t.transaction_type = 'starter_credit'
+);
