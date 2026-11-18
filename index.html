@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090b0a">
+<title>BETNOVA — Your Game. Your Odds.</title>
+<style>
+:root{--bg:#090b0a;--panel:#121614;--panel2:#191f1b;--red:#f02d38;--green:#27d17f;--muted:#9ba69f;--line:#29312c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f6f8f6;font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}button{font:inherit;cursor:pointer}.wrap{max-width:1120px;margin:auto;padding:0 18px}
+header{border-bottom:1px solid var(--line);background:#0d100e;position:sticky;top:0;z-index:5}.nav{height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:25px;font-weight:900;letter-spacing:1px}.brand span{color:var(--red)}.navright{display:flex;gap:10px;align-items:center}.btn{border:1px solid var(--line);background:var(--panel2);color:white;border-radius:9px;padding:10px 15px;font-weight:700}.btn.red{background:var(--red);border-color:var(--red)}.btn.green{background:var(--green);border-color:var(--green);color:#06140c}
+.hero{padding:38px 0 28px;display:grid;grid-template-columns:1.4fr .8fr;gap:18px}.hero-main{padding:30px;border:1px solid #352326;border-radius:18px;background:radial-gradient(ellipse at 90% 10%,#452025 0,transparent 45%),linear-gradient(135deg,#1a1718,#101411)}.eyebrow{color:var(--green);font-size:12px;font-weight:800;letter-spacing:2px}.hero h1{font-size:clamp(34px,6vw,58px);line-height:1.03;margin:12px 0}.hero h1 span{color:var(--red)}.hero p{color:#bdc6bf;max-width:520px}.hero-side{border:1px solid var(--line);border-radius:18px;padding:22px;background:var(--panel)}.hero-side h3{margin:0 0 14px}.credit{font-size:30px;font-weight:900;color:var(--green)}.small{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:8px;overflow:auto;padding:5px 0 18px}.tab{white-space:nowrap;background:#151a17;color:#c8d0ca;border:1px solid var(--line);padding:9px 15px;border-radius:99px}.tab.active{background:var(--red);border-color:var(--red);color:white}
+.sectionhead{display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px}.sectionhead h2{font-size:21px;margin:0}.live{color:var(--red);font-weight:900;font-size:12px}.matches{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.match{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}.league{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}.teams{display:flex;justify-content:space-between;align-items:center;font-weight:800;margin:12px 0}.vs{color:var(--muted);font-size:11px}.odds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.odd{background:#202722;border:1px solid #303a33;border-radius:8px;padding:9px 5px;color:white;text-align:center}.odd b{display:block;color:var(--green);font-size:16px}.odd small{color:var(--muted)}
+.content{padding-bottom:40px}.slip{margin-top:20px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}.sliprow{display:flex;justify-content:space-between;gap:10px;align-items:center}.empty{color:var(--muted);padding:14px 0}.footer{border-top:1px solid var(--line);padding:22px 0 34px;color:var(--muted);font-size:12px}
+@media(max-width:700px){.hero{grid-template-columns:1fr;padding-top:20px}.hero-main{padding:24px}.matches{grid-template-columns:1fr}.nav{height:60px}.brand{font-size:22px}.navright .btn{padding:8px 10px;font-size:13px}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav"><div class="brand">BET<span>NOVA</span></div><div class="navright"><button class="btn" id="login">Log in</button><button class="btn red" id="signup">Join now</button></div></div></header>
+<main class="wrap">
+<section class="hero"><div class="hero-main"><div class="eyebrow">WELCOME TO BETNOVA</div><h1>YOUR GAME.<br><span>YOUR ODDS.</span></h1><p>A fresh home for football fans. Explore match cards, compare sample odds and build a practice betting slip.</p><button class="btn red" onclick="document.getElementById('matches').scrollIntoView({behavior:'smooth'})">Explore matches</button></div>
+<aside class="hero-side"><h3>Practice wallet</h3><div class="credit">1,000 credits</div><div class="small">Free play balance · Not cash and cannot be withdrawn</div><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><div class="sliprow"><span>Today's featured games</span><b style="color:var(--green)">04</b></div><p class="small">Try the interface using practice credits. No deposits or cash payouts are enabled.</p></aside></section>
+<div class="tabs"><button class="tab active">Football</button><button class="tab">Live centre</button><button class="tab">Virtual games</button><button class="tab">Promotions</button></div>
+<section class="content" id="matches"><div class="sectionhead"><h2>Featured matches</h2><span class="live">● SAMPLE FIXTURES</span></div>
+<div class="matches">
+<article class="match"><div class="league">Premier League · Sample event</div><div class="teams"><span>Northbridge FC</span><span class="vs">VS</span><span>Eastvale United</span></div><div class="odds"><button class="odd" data-pick="Northbridge FC win"><small>1</small><b>1.85</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.40</b></button><button class="odd" data-pick="Eastvale United win"><small>2</small><b>4.20</b></button></div></article>
+<article class="match"><div class="league">La Liga · Sample event</div><div class="teams"><span>Coastal Madrid</span><span class="vs">VS</span><span>Royal Sevilla</span></div><div class="odds"><button class="odd" data-pick="Coastal Madrid win"><small>1</small><b>2.05</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.10</b></button><button class="odd" data-pick="Royal Sevilla win"><small>2</small><b>3.60</b></button></div></article>
+<article class="match"><div class="league">Serie A · Sample event</div><div class="teams"><span>Lakeview Calcio</span><span class="vs">VS</span><span>Metro Torino</span></div><div class="odds"><button class="odd" data-pick="Lakeview Calcio win"><small>1</small><b>2.25</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.00</b></button><button class="odd" data-pick="Metro Torino win"><small>2</small><b>3.15</b></button></div></article>
+<article class="match"><div class="league">International · Sample event</div><div class="teams"><span>Greenfield XI</span><span class="vs">VS</span><span>Redmont City</span></div><div class="odds"><button class="odd" data-pick="Greenfield XI win"><small>1</small><b>1.95</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.25</b></button><button class="odd" data-pick="Redmont City win"><small>2</small><b>3.85</b></button></div></article>
+</div>
+<div class="slip"><div class="sliprow"><h3 style="margin:0">Practice bet slip</h3><button class="btn" id="clear">Clear</button></div><div id="selection" class="empty">Choose a sample price above to add a practice selection.</div><div class="sliprow"><span class="small">Practice only · No real-money wagering</span><b id="count">0 selections</b></div></div>
+</section>
+</main>
+<footer class="footer"><div class="wrap">© 2026 BETNOVA · Your Game. Your Odds. <br>Practice interface only. No deposits, real-money betting or withdrawals are available.</div></footer>
+<script>
+const picks=[];const selection=document.getElementById('selection'),count=document.getElementById('count');
+document.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.pick;if(!picks.includes(p))picks.push(p);render()}));
+function render(){selection.textContent=picks.length?picks.join(' · '):'Choose a sample price above to add a practice selection.';selection.className=picks.length?'':'empty';count.textContent=picks.length+' selection'+(picks.length===1?'':'s')}
+document.getElementById('clear').onclick=()=>{picks.length=0;render()};
+document.getElementById('login').onclick=()=>alert('Account sign-in will be added in a later development stage.');
+document.getElementById('signup').onclick=()=>alert('Account registration will be added in a later development stage.');
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')});
+</script>
+</body></html>
