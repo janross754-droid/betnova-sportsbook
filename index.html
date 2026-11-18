@@ -28,40 +28,40 @@ header{border-bottom:1px solid var(--line);background:#0d100e;position:sticky;to
 </section>
 </main>
 <footer class="footer"><div class="wrap">© 2026 BETNOVA · Your Game. Your Odds. <br>Practice interface only. No deposits, real-money betting or withdrawals are available.</div></footer>
-<script>
-const FIXTURE_KEY='betnova_virtual_fixtures_v1';
+<script type="module">
+import { supabase } from './supabase-client.js';
 const fallbackFixtures=[
  {home:'Northbridge FC',away:'Eastvale United',league:'Premier League · Sample event'},
  {home:'Coastal Madrid',away:'Royal Sevilla',league:'La Liga · Sample event'},
  {home:'Lakeview Calcio',away:'Metro Torino',league:'Serie A · Sample event'},
  {home:'Greenfield XI',away:'Redmont City',league:'International · Sample event'}
 ];
-function renderFixtures(){
- let saved=[];try{const parsed=JSON.parse(localStorage.getItem(FIXTURE_KEY)||'[]');if(Array.isArray(parsed))saved=parsed}catch(e){}
- const fixtures=saved.length?saved:fallbackFixtures;
+const picks=[];const selection=document.getElementById('selection'),count=document.getElementById('count');
+function render(){selection.textContent=picks.length?picks.join(' · '):'Choose a sample price above to add a practice selection.';selection.className=picks.length?'':'empty';count.textContent=picks.length+' selection'+(picks.length===1?'':'s')}
+function renderFixtures(fixtures){
  const root=document.getElementById('fixtureCards');root.innerHTML='';
- fixtures.forEach((f,i)=>{
+ fixtures.forEach(f=>{
   const card=document.createElement('article');card.className='match';
-  const league=document.createElement('div');league.className='league';league.textContent=(f.league||'Sample event')+' · '+(saved.length?'Admin fixture':'Illustrative event');
+  const league=document.createElement('div');league.className='league';league.textContent=(f.league||'Sample event')+' · '+(f.isSample?'Illustrative event':'Published fixture');
   const teams=document.createElement('div');teams.className='teams';
   const home=document.createElement('span');home.textContent=f.home;
   const vs=document.createElement('span');vs.className='vs';vs.textContent='VS';
   const away=document.createElement('span');away.textContent=f.away;teams.append(home,vs,away);
   const odds=document.createElement('div');odds.className='odds';
-  const prices=[['1','1.85',f.home+' win'],['X','3.40','Draw'],['2','4.20',f.away+' win']];
-  prices.forEach(([label,price,pick])=>{const b=document.createElement('button');b.className='odd';b.dataset.pick=pick;const small=document.createElement('small');small.textContent=label;const strong=document.createElement('b');strong.textContent=price;b.append(small,strong);odds.append(b)});
-  card.append(league,teams,odds);
-  if(Array.isArray(f.score)){const result=document.createElement('div');result.className='small';result.style.marginTop='9px';result.textContent='Illustrative simulated score: '+f.score[0]+' - '+f.score[1];card.append(result)}
-  root.append(card);
+  [['1','1.85',f.home+' win'],['X','3.40','Draw'],['2','4.20',f.away+' win']].forEach(([label,price,pick])=>{const b=document.createElement('button');b.className='odd';b.dataset.pick=pick;const small=document.createElement('small');small.textContent=label;const strong=document.createElement('b');strong.textContent=price;b.append(small,strong);odds.append(b)});
+  card.append(league,teams,odds);root.append(card);
  });
- document.querySelectorAll('#fixtureCards [data-pick]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.pick;if(!picks.includes(p))picks.push(p);render()}));
+ root.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.pick;if(!picks.includes(p))picks.push(p);render()}));
 }
-const picks=[];const selection=document.getElementById('selection'),count=document.getElementById('count');
-
-function render(){selection.textContent=picks.length?picks.join(' · '):'Choose a sample price above to add a practice selection.';selection.className=picks.length?'':'empty';count.textContent=picks.length+' selection'+(picks.length===1?'':'s')}
+async function loadFixtures(){
+ const {data,error}=await supabase.from('fixtures').select('id,home_team,away_team,competition,kickoff_at').eq('status','published').order('kickoff_at',{ascending:true}).limit(30);
+ if(!error&&data?.length){renderFixtures(data.map(f=>({home:f.home_team,away:f.away_team,league:f.competition,isSample:false})));return}
+ renderFixtures(fallbackFixtures.map(f=>({...f,isSample:true})));
+}
 document.getElementById('clear').onclick=()=>{picks.length=0;render()};
 document.getElementById('login').onclick=()=>window.location.href='account.html';
 document.getElementById('signup').onclick=()=>window.location.href='account.html?mode=register';
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')});
+render();loadFixtures();
 </script>
 </body></html>
