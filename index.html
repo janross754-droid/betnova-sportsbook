@@ -23,19 +23,41 @@ header{border-bottom:1px solid var(--line);background:#0d100e;position:sticky;to
 <aside class="hero-side"><h3>Practice wallet</h3><div class="credit">1,000 credits</div><div class="small">Free play balance · Not cash and cannot be withdrawn</div><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><div class="sliprow"><span>Today's featured games</span><b style="color:var(--green)">04</b></div><p class="small">Try the interface using practice credits. No deposits or cash payouts are enabled.</p></aside></section>
 <div class="tabs"><button class="tab active">Football</button><button class="tab">Live centre</button><button class="tab">Virtual games</button><button class="tab">Promotions</button></div>
 <section class="content" id="matches"><div class="sectionhead"><h2>Featured matches</h2><span class="live">● SAMPLE FIXTURES</span></div>
-<div class="matches">
-<article class="match"><div class="league">Premier League · Sample event</div><div class="teams"><span>Northbridge FC</span><span class="vs">VS</span><span>Eastvale United</span></div><div class="odds"><button class="odd" data-pick="Northbridge FC win"><small>1</small><b>1.85</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.40</b></button><button class="odd" data-pick="Eastvale United win"><small>2</small><b>4.20</b></button></div></article>
-<article class="match"><div class="league">La Liga · Sample event</div><div class="teams"><span>Coastal Madrid</span><span class="vs">VS</span><span>Royal Sevilla</span></div><div class="odds"><button class="odd" data-pick="Coastal Madrid win"><small>1</small><b>2.05</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.10</b></button><button class="odd" data-pick="Royal Sevilla win"><small>2</small><b>3.60</b></button></div></article>
-<article class="match"><div class="league">Serie A · Sample event</div><div class="teams"><span>Lakeview Calcio</span><span class="vs">VS</span><span>Metro Torino</span></div><div class="odds"><button class="odd" data-pick="Lakeview Calcio win"><small>1</small><b>2.25</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.00</b></button><button class="odd" data-pick="Metro Torino win"><small>2</small><b>3.15</b></button></div></article>
-<article class="match"><div class="league">International · Sample event</div><div class="teams"><span>Greenfield XI</span><span class="vs">VS</span><span>Redmont City</span></div><div class="odds"><button class="odd" data-pick="Greenfield XI win"><small>1</small><b>1.95</b></button><button class="odd" data-pick="Draw"><small>X</small><b>3.25</b></button><button class="odd" data-pick="Redmont City win"><small>2</small><b>3.85</b></button></div></article>
-</div>
+<div class="matches" id="fixtureCards" aria-live="polite"></div>
 <div class="slip"><div class="sliprow"><h3 style="margin:0">Practice bet slip</h3><button class="btn" id="clear">Clear</button></div><div id="selection" class="empty">Choose a sample price above to add a practice selection.</div><div class="sliprow"><span class="small">Practice only · No real-money wagering</span><b id="count">0 selections</b></div></div>
 </section>
 </main>
 <footer class="footer"><div class="wrap">© 2026 BETNOVA · Your Game. Your Odds. <br>Practice interface only. No deposits, real-money betting or withdrawals are available.</div></footer>
 <script>
+const FIXTURE_KEY='betnova_virtual_fixtures_v1';
+const fallbackFixtures=[
+ {home:'Northbridge FC',away:'Eastvale United',league:'Premier League · Sample event'},
+ {home:'Coastal Madrid',away:'Royal Sevilla',league:'La Liga · Sample event'},
+ {home:'Lakeview Calcio',away:'Metro Torino',league:'Serie A · Sample event'},
+ {home:'Greenfield XI',away:'Redmont City',league:'International · Sample event'}
+];
+function renderFixtures(){
+ let saved=[];try{const parsed=JSON.parse(localStorage.getItem(FIXTURE_KEY)||'[]');if(Array.isArray(parsed))saved=parsed}catch(e){}
+ const fixtures=saved.length?saved:fallbackFixtures;
+ const root=document.getElementById('fixtureCards');root.innerHTML='';
+ fixtures.forEach((f,i)=>{
+  const card=document.createElement('article');card.className='match';
+  const league=document.createElement('div');league.className='league';league.textContent=(f.league||'Sample event')+' · '+(saved.length?'Admin fixture':'Illustrative event');
+  const teams=document.createElement('div');teams.className='teams';
+  const home=document.createElement('span');home.textContent=f.home;
+  const vs=document.createElement('span');vs.className='vs';vs.textContent='VS';
+  const away=document.createElement('span');away.textContent=f.away;teams.append(home,vs,away);
+  const odds=document.createElement('div');odds.className='odds';
+  const prices=[['1','1.85',f.home+' win'],['X','3.40','Draw'],['2','4.20',f.away+' win']];
+  prices.forEach(([label,price,pick])=>{const b=document.createElement('button');b.className='odd';b.dataset.pick=pick;const small=document.createElement('small');small.textContent=label;const strong=document.createElement('b');strong.textContent=price;b.append(small,strong);odds.append(b)});
+  card.append(league,teams,odds);
+  if(Array.isArray(f.score)){const result=document.createElement('div');result.className='small';result.style.marginTop='9px';result.textContent='Illustrative simulated score: '+f.score[0]+' - '+f.score[1];card.append(result)}
+  root.append(card);
+ });
+ document.querySelectorAll('#fixtureCards [data-pick]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.pick;if(!picks.includes(p))picks.push(p);render()}));
+}
 const picks=[];const selection=document.getElementById('selection'),count=document.getElementById('count');
-document.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.pick;if(!picks.includes(p))picks.push(p);render()}));
+
 function render(){selection.textContent=picks.length?picks.join(' · '):'Choose a sample price above to add a practice selection.';selection.className=picks.length?'':'empty';count.textContent=picks.length+' selection'+(picks.length===1?'':'s')}
 document.getElementById('clear').onclick=()=>{picks.length=0;render()};
 document.getElementById('login').onclick=()=>window.location.href='account.html';
