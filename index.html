@@ -18,6 +18,39 @@ header{border-bottom:1px solid var(--line);background:#0d100e;position:sticky;to
 @media(max-width:700px){.wrap{padding-left:12px;padding-right:12px}.nav{min-height:62px}.hero{padding:15px 0 14px;gap:10px}.hero-main{padding:20px}.hero h1{font-size:34px}.hero-side{padding:15px}.sport-categories{grid-template-columns:repeat(6,minmax(55px,1fr));gap:2px}.sport-categories a{font-size:10px}.sport-categories a b{font-size:20px}.matches{grid-template-columns:1fr}.match{border-radius:9px;padding:13px}.odds{gap:5px}.odd{padding:8px 3px}.bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);bottom:0;left:0;right:0;z-index:20;background:#08090d;border-top:1px solid #343945;padding:8px 2px calc(8px + env(safe-area-inset-bottom));text-align:center}.bottom-nav a{color:#d5d8df;font-size:10px;font-weight:700}.bottom-nav b{display:block;font-size:20px;line-height:1.5}.content{padding-bottom:112px}.footer{padding-bottom:120px}.sport-strip a{min-width:100px}.sectionhead h2{font-size:19px}}
 html[data-theme="light"] .sport-strip a{background:linear-gradient(145deg,#fff,#e9ebf0);color:#171a22}html[data-theme="light"] .bottom-nav{background:#fff;border-color:var(--line)}html[data-theme="light"] .bottom-nav a{color:#303544}
 
+
+/* Final homepage spacing and mobile navigation fixes */
+.sport-strip,.sport-categories,.league-tabs,.market-head{max-width:100%;overscroll-behavior-x:contain}
+.sport-categories{grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch}
+.sport-categories a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;gap:3px;background:var(--panel);border:1px solid var(--line);padding:10px 4px}
+.sport-categories a b{line-height:1.2}
+.league-tabs a{white-space:nowrap}
+.market-head a{white-space:nowrap}
+.match{display:flex;flex-direction:column;justify-content:space-between;gap:6px}
+.match .teams{min-height:42px}
+.hero-main,.hero-side{min-width:0}
+html[data-theme="light"] .hero-main{background:linear-gradient(135deg,#fff,#f8e9eb)!important;border-color:#ead2d5!important;color:var(--ink)!important}
+html[data-theme="light"] .hero-main p{color:#535b67!important}
+html[data-theme="light"] .sport-categories a{background:var(--panel)!important;color:var(--ink)!important}
+html[data-theme="light"] .sport-strip a{border-color:var(--line)!important}
+html[data-theme="light"] .market-head{border-color:var(--line)}
+@media(max-width:700px){
+ .sport-categories{display:flex;overflow-x:auto;gap:7px;padding:2px 0 12px;scrollbar-width:none}
+ .sport-categories a{flex:0 0 82px;min-height:68px;font-size:11px}
+ .sport-strip{padding-top:10px;padding-bottom:12px}
+ .hero{grid-template-columns:1fr!important}
+ .hero h1{font-size:clamp(31px,9vw,40px)}
+ .sectionhead{align-items:flex-start}
+ .sectionhead h2{line-height:1.2}
+ .matches{grid-template-columns:1fr!important}
+ .match{padding:14px}
+ .odds{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .odd{min-width:0}
+ .slip{padding:14px}
+ .sliptools{grid-template-columns:1fr!important}
+ .bottom-nav{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+}
+
 </style>
 <link rel="stylesheet" href="theme.css">
 </head>
