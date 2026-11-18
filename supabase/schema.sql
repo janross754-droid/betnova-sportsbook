@@ -192,3 +192,67 @@ where not exists (
   select 1 from public.practice_wallet_transactions t
   where t.user_id = w.user_id and t.transaction_type = 'starter_credit'
 );
+
+ 
+-- Server-backed practice bet ledger. All balances and bet placement are changed atomically in Postgres.
+create table if not exists public.practice_bets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  selections jsonb not null check (jsonb_typeof(selections) = 'array' and jsonb_array_length(selections) between 1 and 20),
+  stake numeric(12,2) not null check (stake > 0),
+  combined_odds numeric(12,4) not null check (combined_odds > 1),
+  potential_return numeric(14,2) not null check (potential_return > 0),
+  status text not null default 'open_practice' check (status in ('open_practice','won_practice','lost_practice','void_practice')),
+  settled_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists practice_bets_user_created_idx on public.practice_bets(user_id,created_at desc);
+alter table public.practice_bets enable row level security;
+drop policy if exists "Users read own practice bets" on public.practice_bets;
+create policy "Users read own practice bets" on public.practice_bets for select to authenticated using ((select auth.uid()) = user_id);
+grant select on public.practice_bets to authenticated;
+
+create or replace function public.place_practice_bet(p_selections jsonb, p_stake numeric, p_combined_odds numeric)
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare v_user uuid := (select auth.uid()); v_balance numeric(12,2); v_bet_id uuid; v_return numeric(14,2);
+begin
+  if v_user is null then raise exception 'Please sign in to place a practice selection.'; end if;
+  if jsonb_typeof(p_selections) <> 'array' or jsonb_array_length(p_selections) < 1 or jsonb_array_length(p_selections) > 20 then raise exception 'Your practice slip must contain between 1 and 20 selections.'; end if;
+  if p_stake is null or p_stake <= 0 or p_stake > 100000 then raise exception 'Enter a valid practice stake.'; end if;
+  if p_combined_odds is null or p_combined_odds <= 1 or p_combined_odds > 100000 then raise exception 'Invalid illustrative odds.'; end if;
+  if exists (select 1 from jsonb_array_elements(p_selections) s where coalesce(s->>'fixtureId','')='' or coalesce(s->>'home','')='' or coalesce(s->>'away','')='' or coalesce(s->>'pick','')='' or coalesce((s->>'odds')::numeric,0)<=1) then raise exception 'One or more selections are invalid.'; end if;
+  select balance into v_balance from public.practice_wallets where user_id=v_user for update;
+  if not found then raise exception 'Practice wallet not found for this account.'; end if;
+  if p_stake > v_balance then raise exception 'Your practice stake is greater than your available balance.'; end if;
+  v_return := round(p_stake*p_combined_odds,2);
+  insert into public.practice_bets(user_id,selections,stake,combined_odds,potential_return) values(v_user,p_selections,p_stake,p_combined_odds,v_return) returning id into v_bet_id;
+  update public.practice_wallets set balance=balance-p_stake,updated_at=now() where user_id=v_user;
+  insert into public.practice_wallet_transactions(user_id,transaction_type,amount,description) values(v_user,'practice_stake',p_stake,'Practice selection placed · Ref '||left(v_bet_id::text,8));
+  return v_bet_id;
+end; $$;
+revoke all on function public.place_practice_bet(jsonb,numeric,numeric) from public,anon,authenticated;
+grant execute on function public.place_practice_bet(jsonb,numeric,numeric) to authenticated;
+
+create or replace function public.settle_practice_bets()
+returns integer language plpgsql security definer set search_path = '' as $$
+declare v_bet record; v_total integer:=0; v_done integer; v_won boolean;
+begin
+  if (select auth.uid()) is null or not (select private.is_betnova_admin()) then raise exception 'Administrator access is required to settle practice bets.'; end if;
+  for v_bet in select b.id,b.user_id,b.selections,b.potential_return from public.practice_bets b where b.status='open_practice' order by b.created_at for update loop
+    select count(*),coalesce(bool_and(case s->>'outcome' when '1' then f.home_score>f.away_score when 'X' then f.home_score=f.away_score when '2' then f.away_score>f.home_score else false end),false)
+    into v_done,v_won from jsonb_array_elements(v_bet.selections) s join public.fixtures f on f.id=(s->>'fixtureId')::uuid
+    where f.status='finished' and f.result_is_illustrative=true and f.home_score is not null and f.away_score is not null;
+    if v_done=jsonb_array_length(v_bet.selections) then
+      if v_won then
+        update public.practice_bets set status='won_practice',settled_at=now() where id=v_bet.id;
+        update public.practice_wallets set balance=balance+v_bet.potential_return,updated_at=now() where user_id=v_bet.user_id;
+        insert into public.practice_wallet_transactions(user_id,transaction_type,amount,description) values(v_bet.user_id,'practice_return',v_bet.potential_return,'Practice return · Ref '||left(v_bet.id::text,8));
+      else update public.practice_bets set status='lost_practice',settled_at=now() where id=v_bet.id;
+      end if;
+      v_total:=v_total+1;
+    end if;
+  end loop;
+  return v_total;
+end; $$;
+revoke all on function public.settle_practice_bets() from public,anon,authenticated;
+grant execute on function public.settle_practice_bets() to authenticated;
