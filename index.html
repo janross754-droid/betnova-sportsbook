@@ -153,7 +153,7 @@ $('placePractice').onclick=async()=>{
  const stake=Number($('stake').value),odds=totalOdds();
  if(!Number.isFinite(odds)||odds<=1){$('slipStatus').textContent='Unable to calculate this practice slip.';return}
  const button=$('placePractice');button.disabled=true;button.textContent='Saving securely…';
- const payload=picks.map(p=>({fixtureId:p.fixtureId,home:p.home,away:p.away,market:p.market,pick:p.pick,odds:Number(p.odds)}));
+ const payload=picks.map(p=>({fixtureId:p.fixtureId,home:p.home,away:p.away,market:p.market,pick:p.pick,outcome:p.outcome,odds:Number(p.odds)}));
  const {data,error}=await supabase.rpc('place_practice_bet',{p_selections:payload,p_stake:stake,p_combined_odds:Number(odds.toFixed(4))});
  if(error){$('slipStatus').textContent=error.message||'Could not save practice bet.';button.textContent='Place practice selection';renderSlip();return}
  picks=[];save();$('slipStatus').textContent='Practice bet saved to your account. Reference: BN-'+String(data).slice(0,8)+'. Your server wallet has been updated. No cash value.';
