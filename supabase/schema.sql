@@ -36,7 +36,11 @@ create trigger on_betnova_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_betnova_user();
 
-create or replace function public.is_betnova_admin()
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
+
+create or replace function private.is_betnova_admin()
 returns boolean
 language sql
 stable
@@ -44,15 +48,13 @@ security definer
 set search_path = ''
 as $$
   select exists (
-    select 1
-    from public.profiles p
-    where p.id = (select auth.uid())
-      and p.role = 'admin'
+    select 1 from public.profiles p
+    where p.id = (select auth.uid()) and p.role = 'admin'
   );
 $$;
 
-revoke all on function public.is_betnova_admin() from public, anon;
-grant execute on function public.is_betnova_admin() to authenticated;
+revoke all on function private.is_betnova_admin() from public, anon;
+grant execute on function private.is_betnova_admin() to authenticated;
 revoke all on function public.handle_new_betnova_user() from public, anon, authenticated;
 
 create table if not exists public.fixtures (
@@ -103,7 +105,7 @@ alter table public.fixtures enable row level security;
 drop policy if exists "Users can read own profile or admins can read all" on public.profiles;
 create policy "Users can read own profile or admins can read all"
   on public.profiles for select to authenticated
-  using (id = (select auth.uid()) or (select public.is_betnova_admin()));
+  using (id = (select auth.uid()) or (select private.is_betnova_admin()));
 
 drop policy if exists "Public can read published fixtures" on public.fixtures;
 create policy "Public can read published fixtures"
