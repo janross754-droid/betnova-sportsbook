@@ -38,8 +38,8 @@ const picks=[];const selection=document.getElementById('selection'),count=docume
 document.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.pick;if(!picks.includes(p))picks.push(p);render()}));
 function render(){selection.textContent=picks.length?picks.join(' · '):'Choose a sample price above to add a practice selection.';selection.className=picks.length?'':'empty';count.textContent=picks.length+' selection'+(picks.length===1?'':'s')}
 document.getElementById('clear').onclick=()=>{picks.length=0;render()};
-document.getElementById('login').onclick=()=>alert('Account sign-in will be added in a later development stage.');
-document.getElementById('signup').onclick=()=>alert('Account registration will be added in a later development stage.');
+document.getElementById('login').onclick=()=>window.location.href='account.html';
+document.getElementById('signup').onclick=()=>window.location.href='account.html?mode=register';
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')});
 </script>
 </body></html>
