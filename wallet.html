@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090b0a">
+<title>My Wallet | BETNOVA</title>
+<style>
+:root{--bg:#090b0a;--panel:#141916;--line:#303a33;--red:#f02d38;--green:#27d17f;--muted:#aab4ad}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f6f8f6;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:850px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:8px 0 17px}
+.brand{font-size:24px;font-weight:900}.brand span{color:var(--red)}a{color:white;text-decoration:none}.btn{display:inline-block;border:0;border-radius:8px;background:var(--red);color:white;padding:10px 14px;font-weight:800}
+h1{font-size:28px;margin:26px 0 5px}.muted{color:var(--muted)}.balance{margin:20px 0;padding:24px;border:1px solid #31533e;border-radius:15px;background:linear-gradient(135deg,#14251b,#111713)}
+.balance small{color:#b6c8bc}.amount{font-size:clamp(32px,8vw,46px);font-weight:900;color:var(--green);margin:8px 0}.tag{display:inline-block;border:1px solid #42654f;color:#b9f2cf;border-radius:30px;padding:5px 10px;font-size:11px;font-weight:800;letter-spacing:.5px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.action{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:17px}.action h2{font-size:17px;margin:0 0 6px}.action p{color:var(--muted);font-size:13px;line-height:1.5;min-height:40px}.action button{width:100%;padding:11px;border-radius:8px;border:1px solid #4b554e;background:#252d27;color:#89938c;font-weight:800}
+.panel{margin-top:20px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:17px}.panel h2{font-size:18px;margin:0 0 12px}.transaction{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid var(--line)}.transaction:first-of-type{border-top:0}.transaction b{display:block}.transaction small{color:var(--muted)}.credit{color:var(--green);font-weight:900;white-space:nowrap}
+.notice{margin-top:18px;padding:14px;border:1px solid #5b3d20;background:#21190f;color:#e7c99c;border-radius:10px;font-size:13px;line-height:1.6}
+@media(max-width:560px){.actions{grid-template-columns:1fr}.top{align-items:flex-start}.top>div:last-child{display:flex;flex-direction:column;align-items:flex-end;gap:8px}.wrap{padding:15px}}
+</style>
+</head>
+<body><main class="wrap">
+<header class="top"><div class="brand">BET<span>NOVA</span></div><div><a href="dashboard.html">My account</a>　<a href="index.html">Sports</a></div></header>
+<h1>My wallet</h1><div class="muted" id="walletEmail">Checking your account…</div>
+<section class="balance"><small>Available balance</small><div class="amount" id="balance">Loading…</div><span class="tag">PRACTICE CREDITS · NO CASH VALUE</span></section>
+<section class="actions">
+<article class="action"><h2>Add funds</h2><p>Payment setup is not connected. No card or mobile-money payment can be taken here.</p><button type="button" disabled>Deposits unavailable</button></article>
+<article class="action"><h2>Withdraw</h2><p>Practice credits cannot be exchanged, transferred or withdrawn as money.</p><button type="button" disabled>Withdrawals unavailable</button></article>
+</section>
+<section class="panel"><h2>Wallet activity</h2><div id="transactions" class="muted">Loading your account activity…</div></section>
+<div class="notice"><b>Important:</b> This wallet currently holds non-cash practice credits only. It is not a Ghana cedi balance, and no real-money deposit, stake, payout or withdrawal is processed.</div>
+</main>
+<script type="module">
+import { supabase } from './supabase-client.js';
+const $=id=>document.getElementById(id);
+const {data:{user},error}=await supabase.auth.getUser();
+if(error||!user){location.href='account.html';}
+else{
+ $('walletEmail').textContent=user.email||'Signed-in account';
+ const {data:wallet,error:walletError}=await supabase.from('practice_wallets').select('balance,currency_label').eq('user_id',user.id).maybeSingle();
+ if(walletError){$('balance').textContent='Unavailable';$('transactions').textContent='Could not load wallet details. Please refresh.';}
+ else if(!wallet){$('balance').textContent='0 credits';$('transactions').textContent='No wallet record found. Contact the site administrator.';}
+ else{
+  $('balance').textContent=Number(wallet.balance).toLocaleString(undefined,{maximumFractionDigits:2})+' credits';
+  const {data:rows,error:txError}=await supabase.from('practice_wallet_transactions').select('transaction_type,amount,description,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20);
+  const root=$('transactions');root.innerHTML='';
+  if(txError){root.textContent='Could not load wallet activity.';}
+  else if(!rows?.length){root.textContent='No wallet activity yet.';}
+  else rows.forEach(tx=>{
+   const row=document.createElement('div');row.className='transaction';
+   const left=document.createElement('div');const title=document.createElement('b');title.textContent=tx.description;
+   const date=document.createElement('small');date.textContent=new Date(tx.created_at).toLocaleString();left.append(title,date);
+   const value=document.createElement('div');value.className='credit';value.textContent='+'+Number(tx.amount).toLocaleString()+' credits';row.append(left,value);root.append(row);
+  });
+ }
+}
+</script></body></html>
