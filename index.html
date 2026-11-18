@@ -100,14 +100,14 @@ function renderFixtures(rows){
   const vs=document.createElement('span');vs.className='vs';vs.textContent='VS';
   const away=document.createElement('span');away.textContent=f.away_team;teams.append(home,vs,away);
   const odds=document.createElement('div');odds.className='odds';
-  [['1','1.85','Home win',f.home_team+' win'],['X','3.40','Draw','Draw'],['2','4.20','Away win',f.away_team+' win']].forEach(([label,price,market,pick],i)=>{
+  [['1',String(f.home_odds||1.85),'Home win',f.home_team+' win'],['X',String(f.draw_odds||3.40),'Draw','Draw'],['2',String(f.away_odds||4.20),'Away win',f.away_team+' win']].forEach(([label,price,market,pick],i)=>{
    const b=document.createElement('button');b.type='button';b.className='odd';b.dataset.fixture=String(f.id);b.dataset.outcome=['1','X','2'][i];const small=document.createElement('small');small.textContent=label;const strong=document.createElement('b');strong.textContent=price;b.append(small,strong);b.title=pick+' · illustrative price '+price;b.onclick=()=>{addPick(f,['1','X','2'][i],'1X2',pick,price,b);$('betSlip').scrollIntoView({behavior:'smooth',block:'nearest'})};odds.append(b)
   });
   card.append(league,teams,odds);root.append(card)
  });markSelected()
 }
 async function loadFixtures(){
- const {data,error}=await supabase.from('fixtures').select('id,home_team,away_team,competition,kickoff_at').eq('status','published').order('kickoff_at',{ascending:true}).limit(30);
+ const {data,error}=await supabase.from('fixtures').select('id,home_team,away_team,competition,kickoff_at,home_odds,draw_odds,away_odds').eq('status','published').order('kickoff_at',{ascending:true}).limit(30);
  if(error){$('fixtureCards').textContent='Unable to load published fixtures right now. Please refresh the page.';return}
  fixtures=data||[];renderFixtures(fixtures)
 }
