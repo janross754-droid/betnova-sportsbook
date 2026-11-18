@@ -256,3 +256,17 @@ begin
 end; $$;
 revoke all on function public.settle_practice_bets() from public,anon,authenticated;
 grant execute on function public.settle_practice_bets() to authenticated;
+
+ 
+-- Illustrative 1X2 prices configured by an administrator per fixture.
+alter table public.fixtures
+  add column if not exists home_odds numeric(8,2) not null default 1.85,
+  add column if not exists draw_odds numeric(8,2) not null default 3.40,
+  add column if not exists away_odds numeric(8,2) not null default 4.20;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname='fixtures_home_odds_valid') then alter table public.fixtures add constraint fixtures_home_odds_valid check (home_odds > 1 and home_odds <= 1000); end if;
+  if not exists (select 1 from pg_constraint where conname='fixtures_draw_odds_valid') then alter table public.fixtures add constraint fixtures_draw_odds_valid check (draw_odds > 1 and draw_odds <= 1000); end if;
+  if not exists (select 1 from pg_constraint where conname='fixtures_away_odds_valid') then alter table public.fixtures add constraint fixtures_away_odds_valid check (away_odds > 1 and away_odds <= 1000); end if;
+end $$;
+create index if not exists fixtures_created_by_idx on public.fixtures(created_by);
