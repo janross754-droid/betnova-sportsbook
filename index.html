@@ -27,6 +27,7 @@ header{border-bottom:1px solid var(--line);background:#0d100e;position:sticky;to
 <button class="btn green" id="placePractice" type="button" style="width:100%;margin-top:13px">Place practice selection</button><div class="status" id="slipStatus" role="status" aria-live="polite"></div>
 <div class="notice">Practice only. Prices are illustrative, not verified live odds. Placing a practice selection does not create a real bet or guarantee a return. Practice credits have no cash value and cannot be deposited, transferred or withdrawn.</div>
 </section>
+<section class="slip"><div class="sliphead"><h2>Recent practice selections</h2><span class="small">Saved on this device</span></div><div id="practiceHistory" class="empty">No practice selections placed yet.</div></section>
 </section>
 </main>
 <footer class="footer"><div class="wrap">© 2026 BETNOVA · Your Game. Your Odds.<br>Practice interface only. No deposits, real-money betting or withdrawals are available.</div></footer>
@@ -49,6 +50,20 @@ function renderSlip(){
  const odds=picks.length?totalOdds():0,stake=Number($('stake').value);
  $('totalOdds').textContent=picks.length?odds.toFixed(2):'—';$('stakeShown').textContent=(Number.isFinite(stake)&&stake>0?money(stake):'0')+' credits';$('potential').textContent=picks.length&&Number.isFinite(stake)&&stake>0?money(stake*odds)+' credits':'—';
  $('placePractice').disabled=!picks.length||!validStake();
+}
+function renderHistory(){
+ const root=$('practiceHistory');root.innerHTML='';
+ let receipts=[];try{receipts=JSON.parse(localStorage.getItem(RECEIPTS_KEY)||'[]');if(!Array.isArray(receipts))receipts=[]}catch{receipts=[]}
+ if(!receipts.length){root.className='empty';root.textContent='No practice selections placed yet.';return}
+ root.className='';
+ receipts.slice(0,8).forEach(r=>{
+  const row=document.createElement('div');row.className='selection';
+  const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.id+' · '+r.status;
+  const detail=document.createElement('small');detail.textContent=(r.selections||[]).map(p=>p.home+' vs '+p.away+' — '+p.pick).join(' | ');info.append(title,detail);
+  const value=document.createElement('div');value.className='price';value.textContent=money(r.stake)+' staked';
+  const ret=document.createElement('small');ret.textContent='Potential '+money(r.potentialReturn)+' credits';ret.style.color='var(--muted)';
+  const right=document.createElement('div');right.append(value,ret);row.append(info,right);root.append(row)
+ })
 }
 function markSelected(){document.querySelectorAll('.odd').forEach(b=>b.classList.toggle('selected',picks.some(p=>p.fixtureId===b.dataset.fixture&&p.outcome===b.dataset.outcome)))}
 function addPick(f,outcome,market,pick,odds,button){
@@ -91,9 +106,9 @@ $('placePractice').onclick=()=>{
  let receipts=[];try{receipts=JSON.parse(localStorage.getItem(RECEIPTS_KEY)||'[]');if(!Array.isArray(receipts))receipts=[]}catch{receipts=[]}
  receipts.unshift({id:'BN-'+Date.now(),createdAt:new Date().toISOString(),stake,combinedOdds:Number(odds.toFixed(4)),potentialReturn:Number(potential.toFixed(2)),selections:picks.map(p=>({...p})),status:'Open practice selection'});
  localStorage.setItem(RECEIPTS_KEY,JSON.stringify(receipts.slice(0,50)));
- picks=[];save();renderSlip();markSelected();$('slipStatus').textContent='Practice selection saved on this device. Reference: '+receipts[0].id+'. Stake deducted from non-cash practice credits. This is not a real bet.';
+ picks=[];save();renderSlip();markSelected();renderHistory();$('slipStatus').textContent='Practice selection saved on this device. Reference: '+receipts[0].id+'. Stake deducted from non-cash practice credits. This is not a real bet.';
 };
 $('login').onclick=()=>location.href='account.html';$('signup').onclick=()=>location.href='account.html?mode=register';$('explore').onclick=()=>$('matches').scrollIntoView({behavior:'smooth'});
-renderSlip();loadFixtures();
+renderSlip();renderHistory();loadFixtures();
 </script>
 </body></html>
