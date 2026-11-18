@@ -9,6 +9,9 @@ This repository currently hosts a static GitHub Pages front end. The SQL migrati
 - Restricts creating, editing, and deleting fixtures to authenticated users whose profile role is `admin`.
 - Creates every new profile as `member` by default.
 - Keeps scores explicitly marked as illustrative by default.
+- Creates a private per-account practice wallet with 1,000 non-cash starter credits.
+- Shows the member's practice balance and wallet activity in `wallet.html`.
+- Restricts wallet reads to the signed-in owner; the browser cannot edit balances or transaction records.
 
 ## Setup required before it becomes live
 
@@ -23,4 +26,4 @@ This repository currently hosts a static GitHub Pages front end. The SQL migrati
 
 The current site is not yet connected to this database. Its fixture pages still use browser-local storage until the Supabase project is created and the website integration is configured. Do not treat this as a live admin console.
 
-This backend foundation is limited to fictional/sample fixture listings. It does not implement real-money betting, odds trading, payments, deposits, withdrawals, payouts, or a cash wallet. Those features must remain disabled unless the required Ghanaian regulatory approvals, legal advice, and secure operational controls are in place.
+The wallet is a practice-credit ledger only. It is not denominated in Ghana cedis, has no cash value, and cannot accept deposits, real-money stakes, payouts, transfers, or withdrawals. Payment controls are intentionally disabled. Do not add real-money payment processing or wagering without the applicable legal approvals and a separately reviewed, secure payment and ledger architecture.
