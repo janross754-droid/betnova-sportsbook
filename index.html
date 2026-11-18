@@ -42,12 +42,11 @@ html[data-theme="light"] .sport-strip a{background:linear-gradient(145deg,#fff,#
 <footer class="footer"><div class="wrap">© 2026 BETNOVA · Your Game. Your Odds.<br>Practice interface only. No deposits, real-money betting or withdrawals are available.</div></footer>
 <script type="module">
 import { supabase } from './supabase-client.js';
-const START_BALANCE=1000, BALANCE_KEY='betnova_practice_balance_v1', SLIP_KEY='betnova_practice_slip_v1', RECEIPTS_KEY='betnova_practice_receipts_v1';
+const SLIP_KEY='betnova_practice_slip_v1';
 const $=id=>document.getElementById(id);
-let balance=readBalance(),picks=readPicks(),fixtures=[];
-function readBalance(){const n=Number(localStorage.getItem(BALANCE_KEY));return Number.isFinite(n)&&n>=0?n:START_BALANCE}
+let balance=0,currentUser=null,picks=readPicks(),fixtures=[];
 function readPicks(){try{const v=JSON.parse(localStorage.getItem(SLIP_KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&x.fixtureId&&x.pick&&Number(x.odds)>1):[]}catch{return []}}
-function save(){localStorage.setItem(BALANCE_KEY,String(balance));localStorage.setItem(SLIP_KEY,JSON.stringify(picks))}
+function save(){localStorage.setItem(SLIP_KEY,JSON.stringify(picks))}
 function money(n){return Number(n).toLocaleString(undefined,{maximumFractionDigits:2})}
 function totalOdds(){return picks.reduce((n,p)=>n*Number(p.odds),1)}
 function validStake(){const s=Number($('stake').value);return Number.isInteger(s)&&s>0&&s<=balance}
@@ -58,21 +57,29 @@ function renderSlip(){
  else{root.className='';picks.forEach((p,i)=>{const row=document.createElement('div');row.className='selection';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=p.home+' vs '+p.away;const detail=document.createElement('small');detail.textContent=p.market+' · '+p.pick;info.append(title,detail);const price=document.createElement('div');price.className='price';price.textContent=Number(p.odds).toFixed(2);const remove=document.createElement('button');remove.className='remove';remove.type='button';remove.textContent='Remove';remove.setAttribute('aria-label','Remove '+p.home+' vs '+p.away);remove.onclick=()=>{picks.splice(i,1);save();renderSlip();markSelected()};row.append(info,price,remove);root.append(row)})}
  const odds=picks.length?totalOdds():0,stake=Number($('stake').value);
  $('totalOdds').textContent=picks.length?odds.toFixed(2):'—';$('stakeShown').textContent=(Number.isFinite(stake)&&stake>0?money(stake):'0')+' credits';$('potential').textContent=picks.length&&Number.isFinite(stake)&&stake>0?money(stake*odds)+' credits':'—';
- $('placePractice').disabled=!picks.length||!validStake();
+ $('placePractice').disabled=!currentUser||!picks.length||!validStake();
 }
-function renderHistory(){
+async function renderHistory(){
  const root=$('practiceHistory');root.innerHTML='';
- let receipts=[];try{receipts=JSON.parse(localStorage.getItem(RECEIPTS_KEY)||'[]');if(!Array.isArray(receipts))receipts=[]}catch{receipts=[]}
- if(!receipts.length){root.className='empty';root.textContent='No practice selections placed yet.';return}
+ if(!currentUser){root.className='empty';root.textContent='Log in to view your saved practice bets.';return}
+ const {data:rows,error}=await supabase.from('practice_bets').select('id,selections,stake,combined_odds,potential_return,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
+ if(error){root.className='empty';root.textContent='Could not load your practice bet history.';return}
+ if(!rows||!rows.length){root.className='empty';root.textContent='No practice bets placed yet.';return}
  root.className='';
- receipts.slice(0,8).forEach(r=>{
+ rows.forEach(r=>{
   const row=document.createElement('div');row.className='selection';
-  const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.id+' · '+r.status;
-  const detail=document.createElement('small');detail.textContent=(r.selections||[]).map(p=>p.home+' vs '+p.away+' — '+p.pick).join(' | ');info.append(title,detail);
-  const value=document.createElement('div');value.className='price';value.textContent=money(r.stake)+' staked';
-  const ret=document.createElement('small');ret.textContent='Potential '+money(r.potentialReturn)+' credits';ret.style.color='var(--muted)';
-  const right=document.createElement('div');right.append(value,ret);row.append(info,right);root.append(row)
+  const info=document.createElement('div');const title=document.createElement('strong');title.textContent='BN-'+r.id.slice(0,8)+' · '+r.status.replace(/_/g,' ');
+  const detail=document.createElement('small');detail.textContent=(r.selections||[]).map(p=>p.home+' vs '+p.away+' — '+p.pick).join(' | ')+' · '+new Date(r.created_at).toLocaleString();info.append(title,detail);
+  const right=document.createElement('div');const value=document.createElement('div');value.className='price';value.textContent=money(r.stake)+' credits staked';const ret=document.createElement('small');ret.textContent='Potential '+money(r.potential_return)+' credits';ret.style.color='var(--muted)';right.append(value,ret);row.append(info,right);root.append(row)
  })
+}
+async function loadWallet(){
+ const {data:{user},error}=await supabase.auth.getUser();
+ if(error||!user){currentUser=null;balance=0;$('wallet').textContent='Log in to view';$('available').value='Sign in required';$('placePractice').textContent='Log in to place practice bets';renderSlip();await renderHistory();return}
+ currentUser=user;
+ const {data:wallet,error:walletError}=await supabase.from('practice_wallets').select('balance').eq('user_id',user.id).maybeSingle();
+ if(walletError||!wallet){$('wallet').textContent='Wallet unavailable';balance=0}else{balance=Number(wallet.balance);$('wallet').textContent=money(balance)+' credits';$('placePractice').textContent='Place practice selection'}
+ renderSlip();await renderHistory();
 }
 function markSelected(){document.querySelectorAll('.odd').forEach(b=>b.classList.toggle('selected',picks.some(p=>p.fixtureId===b.dataset.fixture&&p.outcome===b.dataset.outcome)))}
 function addPick(f,outcome,market,pick,odds,button){
@@ -106,19 +113,21 @@ async function loadFixtures(){
 }
 $('stake').addEventListener('input',()=>{ $('slipStatus').textContent='';renderSlip()});
 $('clear').onclick=()=>{picks=[];save();renderSlip();markSelected();$('slipStatus').textContent='Practice slip cleared.'};
-$('placePractice').onclick=()=>{
+$('placePractice').onclick=async()=>{
+ if(!currentUser){$('slipStatus').textContent='Please log in before placing a practice selection.';return}
  if(!picks.length){$('slipStatus').textContent='Add at least one selection first.';return}
- if(!validStake()){$('slipStatus').textContent='Enter a whole-number stake greater than zero and no more than your available practice balance.';return}
- const stake=Number($('stake').value),odds=totalOdds(),potential=stake*odds;
- if(!Number.isFinite(potential)||potential<=0){$('slipStatus').textContent='Unable to calculate this practice slip.';return}
- balance-=stake;
- let receipts=[];try{receipts=JSON.parse(localStorage.getItem(RECEIPTS_KEY)||'[]');if(!Array.isArray(receipts))receipts=[]}catch{receipts=[]}
- receipts.unshift({id:'BN-'+Date.now(),createdAt:new Date().toISOString(),stake,combinedOdds:Number(odds.toFixed(4)),potentialReturn:Number(potential.toFixed(2)),selections:picks.map(p=>({...p})),status:'Open practice selection'});
- localStorage.setItem(RECEIPTS_KEY,JSON.stringify(receipts.slice(0,50)));
- picks=[];save();renderSlip();markSelected();renderHistory();$('slipStatus').textContent='Practice selection saved on this device. Reference: '+receipts[0].id+'. Stake deducted from non-cash practice credits. This is not a real bet.';
-};
+ if(!validStake()){$('slipStatus').textContent='Enter a valid practice stake within your available balance.';return}
+ const stake=Number($('stake').value),odds=totalOdds();
+ if(!Number.isFinite(odds)||odds<=1){$('slipStatus').textContent='Unable to calculate this practice slip.';return}
+ const button=$('placePractice');button.disabled=true;button.textContent='Saving securely…';
+ const payload=picks.map(p=>({fixtureId:p.fixtureId,home:p.home,away:p.away,market:p.market,pick:p.pick,odds:Number(p.odds)}));
+ const {data,error}=await supabase.rpc('place_practice_bet',{p_selections:payload,p_stake:stake,p_combined_odds:Number(odds.toFixed(4))});
+ if(error){$('slipStatus').textContent=error.message||'Could not save practice bet.';button.textContent='Place practice selection';renderSlip();return}
+ picks=[];save();$('slipStatus').textContent='Practice bet saved to your account. Reference: BN-'+String(data).slice(0,8)+'. Your server wallet has been updated. No cash value.';
+ await loadWallet();markSelected();await renderHistory();
+}
 $('login').onclick=()=>location.href='account.html';$('signup').onclick=()=>location.href='account.html?mode=register';$('explore').onclick=()=>$('matches').scrollIntoView({behavior:'smooth'});
-renderSlip();renderHistory();loadFixtures();
+renderSlip();loadFixtures();loadWallet();
 </script>
 <script src="theme.js"></script>
 </body></html>
