@@ -1,0 +1,15 @@
+:root{color-scheme:dark;--bg:#090b0f;--panel:#191c24;--panel2:#292d37;--line:#343945;--red:#e52d3b;--green:#55c98b;--muted:#a5aab5;--ink:#f5f6f8}
+html[data-theme="light"]{color-scheme:light;--bg:#f1f2f5;--panel:#ffffff;--panel2:#e8eaf0;--line:#d8dbe3;--red:#d92736;--green:#168a58;--muted:#697080;--ink:#171a22}
+body{background:var(--bg)!important;color:var(--ink)!important;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important}
+header,.top{background:var(--panel)!important;color:var(--ink)!important;border-color:var(--line)!important}
+a{color:var(--ink)}.btn,.action button,.odd,.item,.card,.match,.panel,.slip,.hero-side,.transaction,.action{color:var(--ink)}
+input,select,textarea{background:var(--panel2)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.theme-toggle{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:9px;padding:8px 11px;font-weight:800;cursor:pointer;white-space:nowrap}
+.theme-toggle:focus-visible,.btn:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+html[data-theme="light"] .hero-main{background:linear-gradient(135deg,#fff,#f4e9eb)!important}
+html[data-theme="light"] .odd{background:#eef0f4!important;border-color:#d8dbe3!important;color:#171a22!important}
+html[data-theme="light"] .odd.selected{background:#dff4e8!important;border-color:var(--green)!important}
+html[data-theme="light"] .summary,html[data-theme="light"] .field input{background:#f7f8fa!important;color:#171a22!important}
+html[data-theme="light"] .balance{background:linear-gradient(135deg,#e5f4eb,#fff)!important}
+html[data-theme="light"] .notice{background:#fff7e9!important;color:#76521d!important}
+@media(max-width:700px){.theme-toggle{padding:7px 9px;font-size:12px}}
