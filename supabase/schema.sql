@@ -115,23 +115,23 @@ create policy "Public can read published fixtures"
 drop policy if exists "Admins can read all fixtures" on public.fixtures;
 create policy "Admins can read all fixtures"
   on public.fixtures for select to authenticated
-  using ((select public.is_betnova_admin()));
+  using ((select private.is_betnova_admin()));
 
 drop policy if exists "Admins can create fixtures" on public.fixtures;
 create policy "Admins can create fixtures"
   on public.fixtures for insert to authenticated
-  with check ((select public.is_betnova_admin()));
+  with check ((select private.is_betnova_admin()));
 
 drop policy if exists "Admins can update fixtures" on public.fixtures;
 create policy "Admins can update fixtures"
   on public.fixtures for update to authenticated
-  using ((select public.is_betnova_admin()))
-  with check ((select public.is_betnova_admin()));
+  using ((select private.is_betnova_admin()))
+  with check ((select private.is_betnova_admin()));
 
 drop policy if exists "Admins can delete fixtures" on public.fixtures;
 create policy "Admins can delete fixtures"
   on public.fixtures for delete to authenticated
-  using ((select public.is_betnova_admin()));
+  using ((select private.is_betnova_admin()));
 
 grant select on public.fixtures to anon, authenticated;
 grant insert, update, delete on public.fixtures to authenticated;
