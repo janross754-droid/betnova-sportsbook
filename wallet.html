@@ -48,7 +48,7 @@ else{
    const row=document.createElement('div');row.className='transaction';
    const left=document.createElement('div');const title=document.createElement('b');title.textContent=tx.description;
    const date=document.createElement('small');date.textContent=new Date(tx.created_at).toLocaleString();left.append(title,date);
-   const value=document.createElement('div');value.className='credit';value.textContent='+'+Number(tx.amount).toLocaleString()+' credits';row.append(left,value);root.append(row);
+   const value=document.createElement('div');value.className='credit';value.textContent=(tx.transaction_type==='practice_stake'?'−':'+')+Number(tx.amount).toLocaleString()+' credits';if(tx.transaction_type==='practice_stake')value.style.color='var(--red)';row.append(left,value);root.append(row);
   });
  }
 }
